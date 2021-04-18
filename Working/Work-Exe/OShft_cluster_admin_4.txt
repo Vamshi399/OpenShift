@@ -1,0 +1,45 @@
+[root@osh1 openshift-ansible]# ls /var/lib/origin/
+openshift.local.config  openshift.local.volumes
+
+[root@osh1 openshift-ansible]# ls /etc/origin/cloudprovider/
+
+[root@osh1 openshift-ansible]# ls /usr/libexec/kubernetes/kubelet-plugins/
+volume
+
+[root@osh1 openshift-ansible]# ls /etc/origin/master/
+admin.crt                          client-ca-bundle.crt                 master.env                 named_certificates           registry.key
+admin.key                          etcd.server.crt                      master.etcd-ca.crt         openshift-aggregator.crt     scheduler.json
+admin.kubeconfig                   etcd.server.key                      master.etcd-client.crt     openshift-aggregator.key     serviceaccounts.private.key
+aggregator-front-proxy.crt         front-proxy-ca.crt                   master.etcd-client.csr     openshift-master.crt         serviceaccounts.public.key
+aggregator-front-proxy.key         frontproxy-ca.crt                    master.etcd-client.key     openshift-master.key         service-signer.crt
+aggregator-front-proxy.kubeconfig  front-proxy-ca.key                   master.kubelet-client.crt  openshift-master.kubeconfig  service-signer.key
+bootstrap.kubeconfig               frontproxy-ca.key                    master.kubelet-client.key  openshift-router.crt         session-secrets.yaml
+ca-bundle.crt                      frontproxy-ca.serial.txt             master.proxy-client.crt    openshift-router.key
+ca.crt                             htpasswd                             master.proxy-client.key    policy.json
+ca.key                             htpasswd.11105.2020-12-01@04:36:54~  master.server.crt          recycler_pod.yaml
+ca.serial.txt                      master-config.yaml                   master.server.key          registry.crt
+[root@osh1 openshift-ansible]# ls /etc/origin/
+cloudprovider  logging  master  node  openvswitch  service-catalog
+
+oc logs master-api-osh1 -n kube-system
+
+Increasing the loglevel of the API server to provide more verbose data if a problem occurs. 
+You must edit the /etc/origin/master/master.env file, where the --loglevel parameter in the OPTIONS 
+variable can be modified, because this value is passed to the process running inside the container. 
+
+Changes require a restart of the process running inside the container.
+
+[root@osh1 openshift-ansible]# ls /usr/local/bin/master*
+/usr/local/bin/master-exec  /usr/local/bin/master-logs  /usr/local/bin/master-restart
+
+master-restart api
+master-restart controllers
+master-restart etcd
+
+To view logs for control plane services running in control plane static pods
+master-logs api api
+master-logs controllers controllers
+master-logs etcd etcd
+
+
+

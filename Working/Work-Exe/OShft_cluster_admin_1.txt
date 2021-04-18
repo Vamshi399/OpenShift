@@ -1,0 +1,161 @@
+Locally/cloud machines-Deployed multinode cluster
+--------------------
+
+Example inventory files can be found:
+https://docs.openshift.com/container-platform/3.11/install/example_inventories.html#install-config-example-inventories
+
+Locations:
+[root@osh1 openshift-ansible]# ls /usr/share/ansible/
+collections  plugins  roles
+
+[root@osh1 openshift-ansible]# ls /etc/ansible/
+ansible.cfg  facts.d  hosts  roles
+
+[root@osh1 openshift-ansible]# ls /usr/bin/ansi*
+/usr/bin/ansible             /usr/bin/ansible-console      /usr/bin/ansible-doc-2.7     /usr/bin/ansible-playbook      /usr/bin/ansible-pull-2.7
+/usr/bin/ansible-2           /usr/bin/ansible-console-2    /usr/bin/ansible-galaxy      /usr/bin/ansible-playbook-2    /usr/bin/ansible-test
+/usr/bin/ansible-2.7         /usr/bin/ansible-console-2.7  /usr/bin/ansible-galaxy-2    /usr/bin/ansible-playbook-2.7  /usr/bin/ansible-vault
+/usr/bin/ansible-config      /usr/bin/ansible-doc          /usr/bin/ansible-galaxy-2.7  /usr/bin/ansible-pull          /usr/bin/ansible-vault-2
+/usr/bin/ansible-connection  /usr/bin/ansible-doc-2        /usr/bin/ansible-inventory   /usr/bin/ansible-pull-2        /usr/bin/ansible-vault-2.7
+
+[root@osh1 openshift-ansible]# pwd
+/root/openshift-ansible
+[root@osh1 openshift-ansible]# ls playbooks/
+adhoc               init                          openshift-glusterfs             openshift-monitoring             prerequisites.yml
+aws                 metrics-server                openshift-hosted                openshift-nfs                    README.md
+azure               olm                           openshift-loadbalancer          openshift-node                   redeploy-certificates.yml
+byo                 openshift-autoheal            openshift-logging               openshift-node-problem-detector  roles
+cluster-operator    openshift-checks              openshift-management            openshift-provisioners           updates
+common              openshift-cluster-autoscaler  openshift-master                openshift-service-catalog
+container-runtime   openshift-console             openshift-metering              openshift-web-console
+deploy_cluster.yml  openshift-descheduler         openshift-metrics               openstack
+gcp                 openshift-etcd                openshift-monitor-availability  ovirt
+
+[root@osh1 openshift-ansible]# ls playbooks/openshift-master/
+additional_config.yml  components.yml  enable_bootstrap.yml      private                    redeploy-named-certificates.yml  restart.yml
+certificates.yml       config.yml      openshift_node_group.yml  redeploy-certificates.yml  redeploy-openshift-ca.yml        scaleup.yml
+
+[root@osh1 openshift-ansible]# ls playbooks/openshift-node
+bootstrap.yml  imageconfig.yml  join.yml  network_manager.yml  private  restart.yml  scaleup.yml
+
+OpenShift Container Platform provides two command line utilities to interact with it.
+
+oc: for normal project and application management
+oc adm: for administrative tasks
+
+When running oc adm commands, you should run them only from the first master listed in the Ansible host inventory file,
+ by default /etc/ansible/hosts.
+
+oc --help
+oc adm --help
+-------------------------------------
+Roles and Authentication
+--when installed for the first time, there are no roles or user accounts created in OpenShift Container Platform
+
+#when cluster up
+$ oc whoami
+system:admin
+
+#to verify that OpenShift Container Platform was installed and started successfully.
+[root@osh1 openshift-ansible]# oc get nodes
+NAME      STATUS    ROLES     AGE       VERSION
+osh1      Ready     master    28m       v1.11.0+d4cacc0
+osh2      Ready     infra     25m       v1.11.0+d4cacc0
+osh3      Ready     compute   25m       v1.11.0+d4cacc0
+
+[root@osh1 openshift-ansible]# oc get pods
+NAME                        READY     STATUS    RESTARTS   AGE
+docker-registry-1-lh984     1/1       Running   0          22m
+registry-console-1-deploy   0/1       Error     0          22m
+router-1-deploy             0/1       Pending   0          22m
+
+
+#logging in:
+The default behavior of a freshly installed OpenShift Container Platform instance is to deny any user from logging in. 
+To change the authentication method to HTPasswd:
+
+Open the /etc/origin/master/master-config.yaml file in edit mode.
+Find the identityProviders section.
+
+for example:
+sudo cat /etc/origin/master/master-config.yaml | grep identityProviders --color
+
+Change DenyAllPasswordIdentityProvider to HTPasswdPasswordIdentityProvider provider.
+
+  identityProviders:
+  - challenge: true
+    login: true
+    name: htpasswd_auth provider
+    provider:
+      apiVersion: v1
+      kind: HTPasswdPasswordIdentityProvider
+      file: /etc/origin/master/htpasswd
+
+Change the value of the name label to htpasswd_auth and add a new line file: /etc/origin/master/htpasswd 
+in the provider section.
+Note** If this was done during installation, then we can add additional users to this file.
+
+When using using the HTPasswdPasswordIdentityProvider provider
+Generate user accounts
+yum -y install httpd-tools
+
+#if file not existing
+touch /etc/origin/master/htpasswd
+
+or
+htpasswd -b /etc/origin/master/htpasswd admin pswd
+
+[root@osh1 openshift-ansible]# htpasswd /etc/origin/master/htpasswd admin
+New password:
+Re-type new password:
+Adding password for user admin
+
+[root@osh1 openshift-ansible]# oc adm policy add-cluster-role-to-user cluster-admin admin
+Warning: User 'admin' not found
+cluster role "cluster-admin" added: "admin"
+[root@osh1 openshift-ansible]# oc login -u admin
+error: dial tcp: lookup console.ww.openshift.test.dev on 10.156.0.23:53: no such host
+
+[root@osh1 openshift-ansible]# vi /etc/hosts and add this entry now
+
+10.156.0.23  console.ww.openshift.test.dev
+
+[root@osh1 openshift-ansible]# oc login -u admin
+Authentication required for https://osh1.europe-west3-c.c.model-block-277513.internal:8443 (openshift)
+Username: admin
+Password:
+Login successful.
+
+You have access to the following projects and can switch between them with 'oc project <projectname>':
+
+  * default
+    kube-public
+    kube-service-catalog
+    kube-system
+    management-infra
+    openshift
+    openshift-console
+    openshift-infra
+    openshift-logging
+    openshift-metrics-server
+    openshift-monitoring
+    openshift-node
+    openshift-sdn
+    openshift-template-service-broker
+    openshift-web-console
+
+Using project "default".
+
+#giving admin previleges:
+[root@osh1 openshift-ansible]# oc adm policy add-cluster-role-to-user cluster-admin admin
+cluster role "cluster-admin" added: "admin"
+
+
+
+
+
+
+
+
+
+

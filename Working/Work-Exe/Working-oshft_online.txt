@@ -1,0 +1,264 @@
+Working with Openshift online:
+
+To login to the OpenShift cluster from the Terminal run:
+
+oc login -u developer -p developer  2886795297-8443-kota01.environments.katacoda.com
+
+This will log you in using the credentials:
+
+Username: developer
+Password: developer
+Use the same credentials to log into the web console.
+
+In order that you can still run commands from the command line as a cluster admin, 
+the sudoer role has been enabled for the developer account. 
+To execute a command as a cluster admin use the --as system:admin option to the command. 
+For example:
+
+oc get projects --as system:admin
+
+NAME                                DISPLAY NAME   STATUS
+default                                            Active
+kube-public                                        Active
+kube-service-catalog                               Active
+kube-system                                        Active
+management-infra                                   Active
+openshift                                          Active
+openshift-ansible-service-broker                   Active
+openshift-console                                  Active
+openshift-infra                                    Active
+openshift-logging                                  Active
+openshift-monitoring                               Active
+openshift-node                                     Active
+openshift-sdn                                      Active
+openshift-template-service-broker                  Active
+openshift-web-console                              Active
+
+Creating your own Project:
+To create a new project called myproject run the command:
+
+$ oc new-project myproject
+Now using project "myproject" on server "https://2886795297-8443-kota01.environments.katacoda.com:443".
+
+You can add applications to this project with the 'new-app' command. For example, try:
+
+    oc new-app centos/ruby-25-centos7~https://github.com/sclorg/ruby-ex.git
+
+to build a new example application in Ruby.
+
+You could instead create the project from the web console. If you do this, to change to 
+the project from the command line run the command:
+
+$ oc project myproject
+Already on project "myproject" on server "https://2886795297-8443-kota01.environments.katacoda.com:443".
+
+Persistent Volume Claims:
+To view the list of available persistent volumes you can run:
+
+$ oc get pv --as system:admin
+No resources found.
+
+Builder Images and Templates:
+You can see the list of what is available, and what versions, under Add to Project in the web console, 
+or by running from the command line:
+
+$oc new-app -L
+
+For example on openshift playground it shows:
+Templates (oc new-app --template=<template>)
+-----
+registry-console
+  Project: openshift
+  Template for deploying registry web console. Requires cluster-admin.
+redis-persistent
+  Project: openshift
+  Redis in-memory data structure store, with persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/redis-container/blob/master/3.2.
+
+NOTE: You must have persistent volumes available in your cluster to use this template.
+redis-ephemeral
+  Project: openshift
+  Redis in-memory data structure store, without persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/redis-container/blob/master/3.2.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing
+rails-postgresql-example
+  Project: openshift
+  An example Rails application with a PostgreSQL database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/rails-ex/blob/master/README.md.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.
+rails-pgsql-persistent
+  Project: openshift
+  An example Rails application with a PostgreSQL database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/rails-ex/blob/master/README.md.
+postgresql-persistent
+  Project: openshift
+  PostgreSQL database service, with persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/.
+
+NOTE: Scaling to more than one replica is not supported. You must have persistent volumes available in your cluster touse this template.
+3scale-gateway
+  Project: openshift
+  3scale API Gateway
+amp-apicast-wildcard-router
+  Project: openshift
+amp-pvc
+  Project: openshift
+cakephp-mysql-example
+  Project: openshift
+  An example CakePHP application with a MySQL database. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/cakephp-ex/blob/master/README.md.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.
+cakephp-mysql-persistent
+  Project: openshift
+  An example CakePHP application with a MySQL database. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/cakephp-ex/blob/master/README.md.
+dancer-mysql-example
+  Project: openshift
+  An example Dancer application with a MySQL database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/dancer-ex/blob/master/README.md.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.
+dancer-mysql-persistent
+  Project: openshift
+  An example Dancer application with a MySQL database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/dancer-ex/blob/master/README.md.
+django-psql-example
+  Project: openshift
+  An example Django application with a PostgreSQL database. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/django-ex/blob/master/README.md.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.
+nodejs-mongodb-example
+  Project: openshift
+  An example Node.js application with a MongoDB database. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/nodejs-ex/blob/master/README.md.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.
+dotnet-example
+  Project: openshift
+  An example .NET Core application.
+dotnet-pgsql-persistent
+  Project: openshift
+  An example .NET Core application with a PostgreSQL database. For more information about using this template, including OpenShift considerations, see https://github.com/redhat-developer/s2i-dotnetcore.
+dotnet-runtime-example
+  Project: openshift
+  An example .NET Core Runtime example application.
+httpd-example
+  Project: openshift
+  An example Apache HTTP Server (httpd) application that serves static content. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/httpd-ex/blob/master/README.md.
+jenkins-ephemeral
+  Project: openshift
+  Jenkins service, without persistent storage.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.
+jenkins-persistent
+  Project: openshift
+  Jenkins service, with persistent storage.
+
+NOTE: You must have persistent volumes available in your cluster to use this template.
+mariadb-ephemeral
+  Project: openshift
+  MariaDB database service, without persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mariadb-container/blob/master/10.2/root/usr/share/container-scripts/mysql/README.md.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing
+mariadb-persistent
+  Project: openshift
+  MariaDB database service, with persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mariadb-container/blob/master/10.2/root/usr/share/container-scripts/mysql/README.md.
+
+NOTE: Scaling to more than one replica is not supported. You must have persistent volumes available in your cluster touse this template.
+mongodb-ephemeral
+  Project: openshift
+  MongoDB database service, without persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/blob/master/3.2/README.md.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing
+mongodb-persistent
+  Project: openshift
+  MongoDB database service, with persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mongodb-container/blob/master/3.2/README.md.
+
+NOTE: Scaling to more than one replica is not supported. You must have persistent volumes available in your cluster touse this template.
+mysql-ephemeral
+  Project: openshift
+  MySQL database service, without persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/mysql-container/blob/master/5.7/root/usr/share/container-scripts/mysql/README.md.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing
+mysql-persistent
+  Project: openshift
+  MySQL database service, with persistent storage. For more information about using this template, including OpenShiftconsiderations, see https://github.com/sclorg/mysql-container/blob/master/5.7/root/usr/share/container-scripts/mysql/README.md.
+
+NOTE: Scaling to more than one replica is not supported. You must have persistent volumes available in your cluster touse this template.
+nginx-example
+  Project: openshift
+  An example Nginx HTTP server and a reverse proxy (nginx) application that serves static content. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/nginx-ex/blob/master/README.md.
+nodejs-mongo-persistent
+  Project: openshift
+  An example Node.js application with a MongoDB database. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/nodejs-ex/blob/master/README.md.
+django-psql-persistent
+  Project: openshift
+  An example Django application with a PostgreSQL database. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/django-ex/blob/master/README.md.
+postgresql-ephemeral
+  Project: openshift
+  PostgreSQL database service, without persistent storage. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/postgresql-container/.
+
+WARNING: Any data stored will be lost upon pod destruction. Only use this template for testing
+system
+  Project: openshift
+
+Image streams (oc new-app --image-stream=<image-stream> [--code=<source>])
+-----
+postgresql
+  Project: openshift
+  Tags:    10, 9.5, 9.6, latest
+dotnet-runtime
+  Project: openshift
+  Tags:    2.0, 2.1, latest
+httpd
+  Project: openshift
+  Tags:    2.4, latest
+jenkins
+  Project: openshift
+  Tags:    2, latest
+mariadb
+  Project: openshift
+  Tags:    10.1, 10.2, latest
+mongodb
+  Project: openshift
+  Tags:    3.2, 3.4, 3.6, latest
+mysql
+  Project: openshift
+  Tags:    5.7, latest
+nginx
+  Project: openshift
+  Tags:    1.10, 1.12, 1.8, latest
+dotnet
+  Project: openshift
+  Tags:    2.0, latest
+ruby
+  Project: openshift
+  Tags:    2.3, 2.4, 2.5
+redis
+  Project: openshift
+  Tags:    3.2
+python
+  Project: openshift
+  Tags:    2.7, 3.5, 3.6
+perl
+  Project: openshift
+  Tags:    5.24, 5.26
+nodejs
+  Project: openshift
+  Tags:    10, 6, 8, 8-RHOAR
+wildfly
+  Project: openshift
+  Tags:    10.0, 10.1, 11.0, 12.0, 13.0, 8.1, 9.0
+
+
+Running Images as a Defined User
+By default OpenShift prohibits images from running as the root user or as a specified user. Instead, 
+each project is assigned its own unique range of user IDs that application images have to run as.
+
+If you attempt to run an arbitrary image from an external image registry such a Docker Hub, which is not 
+built to best practices, or requires that it be run as root, it may not work as a result.
+
+In order to run such an image, you will need to grant additional privileges to the project you create to 
+allow it to run an application image as any user ID. This can be done by running the command:
+
+oc adm policy add-scc-to-user anyuid -z default -n myproject --as system:admin
+
+
+
+
+
+
+

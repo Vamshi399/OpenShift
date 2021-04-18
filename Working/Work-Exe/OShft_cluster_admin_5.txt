@@ -1,0 +1,144 @@
+Node Bootstrap Workflow
+The process for automatic node bootstrapping uses the following workflow:
+
+By default during cluster installation, a set of clusterrole, clusterrolebinding and serviceaccount objects are 
+created for use in node bootstrapping:
+
+The system:node-bootstrapper cluster role is used for creating certificate signing requests (CSRs) during node 
+bootstrapping:
+
+[root@osh1 openshift-ansible]# oc describe clusterrole.authorization.openshift.io/system:node-bootstrapper
+Name:                   system:node-bootstrapper
+Created:                4 hours ago
+Labels:                 kubernetes.io/bootstrapping=rbac-defaults
+Annotations:            authorization.openshift.io/system-only=true
+                        openshift.io/reconcile-protect=false
+Verbs                   Non-Resource URLs       Resource Names  API Groups              Resources
+[create get list watch] []                      []              [certificates.k8s.io]   [certificatesigningrequests]
+
+node-bootstrapper service account is created in the openshift-infra project:
+[root@osh1 openshift-ansible]# oc describe sa node-bootstrapper -n openshift-infra
+Name:                node-bootstrapper
+Namespace:           openshift-infra
+Labels:              <none>
+Annotations:         <none>
+Image pull secrets:  node-bootstrapper-dockercfg-g6wvq
+Mountable secrets:   node-bootstrapper-token-76mf2
+                     node-bootstrapper-dockercfg-g6wvq
+Tokens:              node-bootstrapper-token-757sx
+                     node-bootstrapper-token-76mf2
+Events:              <none>
+
+ system:node-bootstrapper cluster role binding is for the node bootstrapper cluster role and service account:
+[root@osh1 openshift-ansible]# oc describe clusterrolebindings system:node-bootstrapper
+Name:                   system:node-bootstrapper
+Created:                4 hours ago
+Labels:                 <none>
+Annotations:            openshift.io/reconcile-protect=false
+Role:                   /system:node-bootstrapper
+Users:                  <none>
+Groups:                 <none>
+ServiceAccounts:        openshift-infra/node-bootstrapper
+Subjects:               <none>
+Verbs                   Non-Resource URLs       Resource Names  API Groups              Resources
+[create get list watch] []                      []              [certificates.k8s.io]   [certificatesigningrequests]
+
+
+by default during cluster installation, the openshift-ansible installer creates a OpenShift Container Platform 
+certificate authority and various other certificates, keys, and kubeconfig files in the /etc/origin/master directory.
+ Two files of note are:
+
+/etc/origin/master/admin.kubeconfig	
+Uses the system:admin user.
+
+/etc/origin/master/bootstrap.kubeconfig	
+Used for node bootstrapping nodes other than masters.
+
+1.The /etc/origin/master/bootstrap.kubeconfig is created when the installer uses the node-bootstrapper service account 
+
+for example: (already done when setup)
+$ oc --config=/etc/origin/master/admin.kubeconfig \
+    serviceaccounts create-kubeconfig node-bootstrapper \
+    -n openshift-infra
+
+[root@osh1 openshift-ansible]# cat  /etc/origin/master/bootstrap.kubeconfig
+
+2. On master nodes, the /etc/origin/master/admin.kubeconfig is used as a bootstrapping file and 
+is copied to /etc/origin/node/boostrap.kubeconfig. On other, non-master nodes, the 
+/etc/origin/master/bootstrap.kubeconfig file is copied to all other nodes in at 
+/etc/origin/node/boostrap.kubeconfig on each node host.
+
+3. The /etc/origin/master/bootstrap.kubeconfig is then passed to kubelet using the flag --bootstrap-kubeconfig
+for example:(already shud be done during setup)
+--bootstrap-kubeconfig=/etc/origin/node/bootstrap.kubeconfig
+
+The kubelet is first started with the supplied /etc/origin/node/bootstrap.kubeconfig file. 
+After initial connection internally, the 
+kubelet creates certificate signing requests (CSRs) and sends them to the master.
+
+The CSRs are verified and approved via the controller manager (specifically the certificate signing controller). 
+If approved, the kubelet client and
+ server certificates are created in the /etc/origin/node/ceritificates directory. 
+
+[root@osh1 openshift-ansible]# ls -al /etc/origin/node/certificates/
+total 12
+drwxr-xr-x. 2 root root  212 Dec  1 04:41 .
+drwx------. 5 root root  198 Dec  1 04:40 ..
+-rw-------. 1 root root 2830 Dec  1 04:37 kubelet-client-2020-12-01-04-37-03.pem
+-rw-------. 1 root root 1131 Dec  1 04:38 kubelet-client-2020-12-01-04-38-16.pem
+lrwxrwxrwx. 1 root root   68 Dec  1 04:38 kubelet-client-current.pem -> /etc/origin/node/certificates/kubelet-client-2020-12-01-04-38-16.pem
+-rw-------. 1 root root 1183 Dec  1 04:41 kubelet-server-2020-12-01-04-41-03.pem
+lrwxrwxrwx. 1 root root   68 Dec  1 04:41 kubelet-server-current.pem -> /etc/origin/node/certificates/kubelet-server-2020-12-01-04-41-03.pem
+
+After the CSR approval, the node.kubeconfig file is created at /etc/origin/node/node.kubeconfig.
+
+The kubelet is restarted with the /etc/origin/node/node.kubeconfig file and the certificates 
+in the /etc/origin/node/certificates/ directory, after which point it is ready to join the cluster.
+
+Node configuration workflow:
+Sourcing a node’s configuration uses the following workflow:
+
+Initially the node’s kubelet is started with the bootstrap configuration file, bootstrap-node-config.yaml 
+in the /etc/origin/node/ directory, created at the time of node provisioning.
+
+On each node, the node service file uses the local script openshift-node in the /usr/local/bin/ directory 
+to start the kubelet with the supplied bootstrap-node-config.yaml.
+
+On each master, the directory /etc/origin/node/pods contains pod manifests for apiserver, controller 
+and etcd which are created as static pods on masters.
+
+During cluster installation, a sync DaemonSet is created which creates a sync pod on each node. 
+The sync pod monitors changes in the file /etc/sysconfig/atomic-openshift-node. It specifically watches 
+for BOOTSTRAP_CONFIG_NAME to be set. BOOTSTRAP_CONFIG_NAME is set by the openshift-ansible installer 
+and is the name of the ConfigMap based on the node configuration group the node belongs to.
+
+By default, the installer creates the following node configuration groups:
+
+node-config-master
+node-config-infra
+node-config-compute
+node-config-all-in-one
+node-config-master-infra
+A ConfigMap for each group is created in the openshift-node project.
+
+The sync pod extracts the appropriate ConfigMap based on the value set in BOOTSTRAP_CONFIG_NAME.
+
+The sync pod converts the ConfigMap data into kubelet configurations and creates a /etc/origin/node/node-config.yaml 
+for that node host. If a change is made to this file (or it is the file’s initial creation), the kubelet is restarted.
+
+Modifying Node Configurations
+A node’s configuration is modified by editing the appropriate ConfigMap in the openshift-node project. 
+The /etc/origin/node/node-config.yaml must not be modified directly.
+
+For example, for a node that is in the node-config-compute group, edit the ConfigMap using:
+
+
+$ oc edit cm node-config-compute -n openshift-node
+
+
+
+
+
+
+
+

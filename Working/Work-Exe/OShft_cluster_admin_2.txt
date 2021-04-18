@@ -1,0 +1,384 @@
+Locally/cloud machines-Deployed multinode cluster
+--------------------
+oc --help
+oc adm --help
+-------------------------------------
+$ oc whoami
+system:admin
+
+#to verify that OpenShift Container Platform was installed and started successfully.
+[root@osh1 openshift-ansible]# oc get nodes
+NAME      STATUS    ROLES     AGE       VERSION
+osh1      Ready     master    28m       v1.11.0+d4cacc0
+osh2      Ready     infra     25m       v1.11.0+d4cacc0
+osh3      Ready     compute   25m       v1.11.0+d4cacc0
+
+[root@osh1 openshift-ansible]# oc get pods
+NAME                        READY     STATUS    RESTARTS   AGE
+docker-registry-1-lh984     1/1       Running   0          22m
+registry-console-1-deploy   0/1       Error     0          22m
+router-1-deploy             0/1       Pending   0          22m
+
+[root@osh1 openshift-ansible]# oc get nodes -o wide
+NAME      STATUS    ROLES     AGE       VERSION           INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                KERNEL-VERSION                CONTAINER-RUNTIME
+osh1      Ready     master    1h        v1.11.0+d4cacc0   10.156.0.23   <none>        CentOS Linux 7 (Core)   3.10.0-1127.19.1.el7.x86_64   docker://1.13.1
+osh2      Ready     infra     1h        v1.11.0+d4cacc0   10.156.0.24   <none>        CentOS Linux 7 (Core)   3.10.0-1127.19.1.el7.x86_64   docker://1.13.1
+osh3      Ready     compute   1h        v1.11.0+d4cacc0   10.156.0.25   <none>        CentOS Linux 7 (Core)   3.10.0-1127.19.1.el7.x86_64   docker://1.13.1
+
+[root@osh1 openshift-ansible]# oc get node osh1
+NAME      STATUS    ROLES     AGE       VERSION
+osh1      Ready     master    1h        v1.11.0+d4cacc0
+
+[root@osh1 openshift-ansible]# oc describe node osh1
+Name:               osh1
+Roles:              master
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/os=linux
+                    kubernetes.io/hostname=osh1
+                    logging-infra-fluentd=true
+                    node-role.kubernetes.io/master=true
+Annotations:        node.openshift.io/md5sum=1ed25aba4cf8338e9a97e4260824d08a
+                    volumes.kubernetes.io/controller-managed-attach-detach=true
+CreationTimestamp:  Tue, 01 Dec 2020 04:37:47 +0000
+Taints:             <none>
+Unschedulable:      false
+Conditions:
+  Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----             ------  -----------------                 ------------------                ------                       -------
+  OutOfDisk        False   Tue, 01 Dec 2020 05:56:42 +0000   Tue, 01 Dec 2020 04:37:47 +0000   KubeletHasSufficientDisk     kubelet has sufficient disk space available
+  MemoryPressure   False   Tue, 01 Dec 2020 05:56:42 +0000   Tue, 01 Dec 2020 04:37:47 +0000   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure     False   Tue, 01 Dec 2020 05:56:42 +0000   Tue, 01 Dec 2020 04:37:47 +0000   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure      False   Tue, 01 Dec 2020 05:56:42 +0000   Tue, 01 Dec 2020 04:37:47 +0000   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready            True    Tue, 01 Dec 2020 05:56:42 +0000   Tue, 01 Dec 2020 04:42:25 +0000   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  10.156.0.23
+  Hostname:    osh1
+Capacity:
+ cpu:            2
+ hugepages-1Gi:  0
+ hugepages-2Mi:  0
+ memory:         8008216Ki
+ pods:           250
+Allocatable:
+ cpu:            2
+ hugepages-1Gi:  0
+ hugepages-2Mi:  0
+ memory:         7905816Ki
+ pods:           250
+System Info:
+ Machine ID:                         cd7c85585b483d2656ce72740e5b59f7
+ System UUID:                        1172B13D-EA1F-CFEB-14C7-C09D1F3401B4
+ Boot ID:                            fb95b4a4-2be7-45a7-a3ae-ab6d65f1bf24
+ Kernel Version:                     3.10.0-1127.19.1.el7.x86_64
+ OS Image:                           CentOS Linux 7 (Core)
+ Operating System:                   linux
+ Architecture:                       amd64
+ Container Runtime Version:          docker://1.13.1
+ Kubelet Version:                    v1.11.0+d4cacc0
+ Kube-Proxy Version:                 v1.11.0+d4cacc0
+Non-terminated Pods:                 (12 in total)
+  Namespace                          Name                           CPU Requests  CPU Limits  Memory Requests  Memory Limits
+  ---------                          ----                           ------------  ----------  ---------------  -------------
+  kube-service-catalog               apiserver-ppcrw                0 (0%)        0 (0%)      0 (0%)           0 (0%)
+  kube-service-catalog               controller-manager-v8gzn       0 (0%)        0 (0%)      0 (0%)           0 (0%)
+  kube-system                        master-api-osh1                0 (0%)        0 (0%)      0 (0%)           0 (0%)
+  kube-system                        master-controllers-osh1        0 (0%)        0 (0%)      0 (0%)           0 (0%)
+  kube-system                        master-etcd-osh1               0 (0%)        0 (0%)      0 (0%)           0 (0%)
+  openshift-console                  console-74bdb4d5c9-hrvct       100m (5%)     100m (5%)   100Mi (1%)       100Mi (1%)
+  openshift-logging                  logging-fluentd-2gcwn          100m (5%)     0 (0%)      756Mi (9%)       756Mi (9%)
+  openshift-node                     sync-5qx5f                     0 (0%)        0 (0%)      0 (0%)           0 (0%)
+  openshift-sdn                      ovs-9kqrl                      100m (5%)     0 (0%)      300Mi (3%)       0 (0%)
+  openshift-sdn                      sdn-h2xb6                      100m (5%)     0 (0%)      200Mi (2%)       0 (0%)
+  openshift-template-service-broker  apiserver-cd8j8                0 (0%)        0 (0%)      0 (0%)           0 (0%)
+  openshift-web-console              webconsole-7fc8759f7b-mtd2d    100m (5%)     0 (0%)      100Mi (1%)       0 (0%)
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource  Requests      Limits
+  --------  --------      ------
+  cpu       500m (25%)    100m (5%)
+  memory    1456Mi (18%)  856Mi (11%)
+Events:
+  Type     Reason                    Age               From           Message
+  ----     ------                    ----              ----           -------
+  Normal   Starting                  1h                kubelet, osh1  Starting kubelet.
+  Normal   NodeAllocatableEnforced   1h                kubelet, osh1  Updated Node Allocatable limit across pods
+  Normal   NodeHasSufficientPID      1h (x5 over 1h)   kubelet, osh1  Node osh1 status is now: NodeHasSufficientPID
+  Normal   NodeHasSufficientDisk     1h (x6 over 1h)   kubelet, osh1  Node osh1 status is now: NodeHasSufficientDisk
+  Normal   NodeHasSufficientMemory   1h (x6 over 1h)   kubelet, osh1  Node osh1 status is now: NodeHasSufficientMemory
+  Normal   NodeHasNoDiskPressure     1h (x6 over 1h)   kubelet, osh1  Node osh1 status is now: NodeHasNoDiskPressure
+  Normal   NodeHasSufficientDisk     1h                kubelet, osh1  Node osh1 status is now: NodeHasSufficientDisk
+  Normal   Starting                  1h                kubelet, osh1  Starting kubelet.
+  Normal   NodeHasSufficientMemory   1h                kubelet, osh1  Node osh1 status is now: NodeHasSufficientMemory
+  Normal   NodeHasNoDiskPressure     1h                kubelet, osh1  Node osh1 status is now: NodeHasNoDiskPressure
+  Normal   NodeHasSufficientPID      1h                kubelet, osh1  Node osh1 status is now: NodeHasSufficientPID
+  Normal   NodeAllocatableEnforced   1h                kubelet, osh1  Updated Node Allocatable limit across pods
+  Warning  CheckLimitsForResolvConf  1h (x9 over 1h)   kubelet, osh1  Resolv.conf file '/etc/resolv.conf' contains search line consisting of more than 3 domains!
+  Normal   NodeReady                 1h                kubelet, osh1  Node osh1 status is now: NodeReady
+  Normal   Starting                  1h                kubelet, osh1  Starting kubelet.
+  Normal   NodeAllocatableEnforced   1h                kubelet, osh1  Updated Node Allocatable limit across pods
+  Normal   NodeHasSufficientMemory   1h                kubelet, osh1  Node osh1 status is now: NodeHasSufficientMemory
+  Normal   NodeHasNoDiskPressure     1h                kubelet, osh1  Node osh1 status is now: NodeHasNoDiskPressure
+  Normal   NodeHasSufficientPID      1h                kubelet, osh1  Node osh1 status is now: NodeHasSufficientPID
+  Normal   NodeNotReady              1h                kubelet, osh1  Node osh1 status is now: NodeNotReady
+  Normal   NodeHasSufficientDisk     1h                kubelet, osh1  Node osh1 status is now: NodeHasSufficientDisk
+  Normal   NodeReady                 1h                kubelet, osh1  Node osh1 status is now: NodeReady
+  Warning  CheckLimitsForResolvConf  1h (x9 over 1h)   kubelet, osh1  Resolv.conf file '/etc/resolv.conf' contains search line consisting of more than 3 domains!
+  Normal   Starting                  1h                kubelet, osh1  Starting kubelet.
+  Normal   NodeAllocatableEnforced   1h                kubelet, osh1  Updated Node Allocatable limit across pods
+  Normal   NodeHasSufficientDisk     1h (x5 over 1h)   kubelet, osh1  Node osh1 status is now: NodeHasSufficientDisk
+  Normal   NodeHasSufficientMemory   1h (x5 over 1h)   kubelet, osh1  Node osh1 status is now: NodeHasSufficientMemory
+  Normal   NodeHasNoDiskPressure     1h (x4 over 1h)   kubelet, osh1  Node osh1 status is now: NodeHasNoDiskPressure
+  Normal   NodeHasSufficientPID      1h (x5 over 1h)   kubelet, osh1  Node osh1 status is now: NodeHasSufficientPID
+  Warning  CheckLimitsForResolvConf  1h (x15 over 1h)  kubelet, osh1  Resolv.conf file '/etc/resolv.conf' contains search line consisting of more than 3 domains!
+
+[root@osh1 openshift-ansible]# oc adm top nodes
+NAME      CPU(cores)   CPU%      MEMORY(bytes)   MEMORY%
+osh1      345m         17%       2835Mi          36%
+osh2      162m         8%        1950Mi          25%
+osh3      420m         21%       3335Mi          43%
+
+Adding hosts:
+we can add new hosts to our cluster by running 
+playbooks/openshift-master/scaleup.yml or 
+playbooks/openshift-node/scaleup.yml
+
+This playbook queries the master, generates and distributes new certificates for the new hosts and then runs the 
+configuration playbooks on new hosts.
+
+#scaleup.yml configures only the new host.It does not update NO_PROXY in master services and it does not start master services.
+
+Look into /etc/ansible/hosts (if details of your cluster not existing, update it)
+If you used atomic-openshift-installer earlier to run installation, then check 
+~/.config/openshift/hosts for the last inventory file that installer generated and use it as inventory file.
+
+#check if we have latest playbooks
+yum update openshift-ansible
+
+#edit /etc/ansible/hosts
+add new_<host_type> to the [OSEv3:children] section
+[OSEv3:children]
+masters
+nodes
+etcd
+new_nodes
+
+Create a [new_<host_type>] section to specify host information for the new hosts.
+ 
+[nodes]
+10.156.0.23 openshift_node_group_name="node-config-master"
+10.156.0.24 openshift_node_group_name="node-config-infra"
+10.156.0.25 openshift_node_group_name="node-config-compute"
+
+[new_nodes]
+node3.example.com openshift_node_group_name='node-config-infra'
+
+if adding new masters, 
+add hosts to both the [new_masters] section and the 
+[new_nodes] section to ensure that the new master host is part of the OpenShift SDN
+
+[masters]
+master[1:2].example.com
+
+[new_masters]
+master3.example.com
+
+[nodes]
+10.156.0.23 openshift_node_group_name="node-config-master"
+10.156.0.24 openshift_node_group_name="node-config-infra"
+10.156.0.25 openshift_node_group_name="node-config-compute"
+
+[new_nodes]
+master3.example.com
+
+$ ansible-playbook [-i /path/to/file] \
+  playbooks/openshift-master/openshift_node_group.yml
+
+This creates the ConfigMap for the new node groups, and ultimately, the configuration file of the node on the host.
+
+For additional nodes:
+$ ansible-playbook [-i /path/to/file] \
+    playbooks/openshift-node/scaleup.yml
+
+For additional masters:
+$ ansible-playbook [-i /path/to/file] \
+    playbooks/openshift-master/scaleup.yml
+
+verify the installation
+
+Move any hosts that you defined in the [new_<host_type>] section to their appropriate section. 
+By moving these hosts, subsequent playbook runs that use this inventory file treat the nodes correctly. 
+You can keep the empty [new_<host_type>] section. 
+
+Deleting nodes:
+When you delete a node using the CLI, the node object is deleted in Kubernetes, but the pods that exist on the node 
+itself are not deleted. Any bare pods not backed by a replication controller would be inaccessible to OpenShift 
+Container Platform, pods backed by replication controllers would be rescheduled to other available nodes, 
+and local manifest pods would need to be manually deleted.
+
+First evacuate pods:
+Evacuating pods allows you to migrate all or selected pods from a given node. 
+Nodes must first be marked unschedulable to perform pod evacuation.
+
+#first list pods
+oc get -o wide pods
+NAME                        READY     STATUS    RESTARTS   AGE       IP           NODE      NOMINATED NODE
+docker-registry-1-lh984     1/1       Running   0          1h        10.129.0.3   osh2      <none>
+registry-console-1-deploy   0/1       Error     0          1h        10.128.0.2   osh1      <none>
+router-1-deploy             0/1       Pending   0          1h        <none>       <none>    <none>
+
+or
+[root@osh1 openshift-ansible]# oc adm manage-node osh1 osh2 osh3 --list-pods
+
+Listing matched pods on node: osh1
+
+NAMESPACE                           NAME                          READY     STATUS    RESTARTS   AGE
+default                             registry-console-1-deploy     0/1       Error     0          1h
+kube-service-catalog                apiserver-ppcrw               1/1       Running   0          1h
+kube-service-catalog                controller-manager-v8gzn      1/1       Running   3          1h
+kube-system                         master-api-osh1               1/1       Running   2          1h
+kube-system                         master-controllers-osh1       1/1       Running   1          1h
+kube-system                         master-etcd-osh1              1/1       Running   2          1h
+openshift-console                   console-74bdb4d5c9-hrvct      1/1       Running   0          1h
+openshift-logging                   logging-fluentd-2gcwn         1/1       Running   0          1h
+openshift-node                      sync-5qx5f                    1/1       Running   2          1h
+openshift-sdn                       ovs-9kqrl                     1/1       Running   2          1h
+openshift-sdn                       sdn-h2xb6                     1/1       Running   3          1h
+openshift-template-service-broker   apiserver-cd8j8               1/1       Running   0          1h
+openshift-web-console               webconsole-7fc8759f7b-mtd2d   1/1       Running   2          1h
+
+Listing matched pods on node: osh2
+
+NAMESPACE                  NAME                                           READY     STATUS    RESTARTS   AGE
+default                    docker-registry-1-lh984                        1/1       Running   0          1h
+openshift-infra            heapster-9fxg6                                 1/1       Running   0          1h
+openshift-logging          logging-es-data-master-9lujak44-1-deploy       0/1       Error     0          1h
+openshift-logging          logging-fluentd-7qcjs                          1/1       Running   0          1h
+openshift-logging          logging-kibana-1-8htnb                         2/2       Running   0          1h
+openshift-metrics-server   metrics-server-56cd9bfcf-vq89v                 1/1       Running   0          1h
+openshift-monitoring       cluster-monitoring-operator-8578656f6f-cbd7s   1/1       Running   0          1h
+openshift-monitoring       prometheus-operator-6644b8cd54-qfbhg           1/1       Running   0          1h
+openshift-node             sync-s6f7t                                     1/1       Running   2          1h
+openshift-sdn              ovs-8wsdh                                      1/1       Running   2          1h
+openshift-sdn              sdn-jt7fn                                      1/1       Running   3          1h
+
+Listing matched pods on node: osh3
+
+NAMESPACE           NAME                            READY     STATUS      RESTARTS   AGE
+openshift-infra     hawkular-cassandra-1-85jpg      1/1       Running     0          1h
+openshift-infra     hawkular-metrics-schema-tkqs9   0/1       Completed   0          1h
+openshift-infra     hawkular-metrics-tgx6r          1/1       Running     0          1h
+openshift-logging   logging-fluentd-c8n58           1/1       Running     0          1h
+openshift-node      sync-7mzdd                      1/1       Running     2          1h
+openshift-sdn       ovs-6s74b                       1/1       Running     2          1h
+openshift-sdn       sdn-mxl4n                       1/1       Running     3          1h
+
+oc adm manage-node <node1> <node2> \
+    --list-pods [--pod-selector=<pod_selector>] [-o json|yaml]
+
+oc adm manage-node --selector=<node_selector> \
+    --list-pods [--pod-selector=<pod_selector>] [-o json|yaml]
+
+for example:
+[root@osh1 openshift-ansible]# oc describe node osh1 | head
+Name:               osh1
+Roles:              master
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/os=linux
+                    kubernetes.io/hostname=osh1
+                    logging-infra-fluentd=true
+                    node-role.kubernetes.io/master=true
+Annotations:        node.openshift.io/md5sum=1ed25aba4cf8338e9a97e4260824d08a
+                    volumes.kubernetes.io/controller-managed-attach-detach=true
+CreationTimestamp:  Tue, 01 Dec 2020 04:37:47 +0000
+
+or
+[root@osh1 openshift-ansible]# oc get nodes osh1 --show-labels
+NAME      STATUS    ROLES     AGE       VERSION           LABELS
+osh1      Ready     master    2h        v1.11.0+d4cacc0   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/hostname=osh1,logging-infra-fluentd=true,node-role.kubernetes.io/master=true
+
+oc get nodes osh2 -o yaml
+
+#describe a pod
+oc describe pod docker-registry-1-lh984
+
+#looking at logs for a particular pod
+oc -n default logs -f docker-registry-1-lh984
+
+
+#After adding a new node:
+#Add label to a node
+
+oc label nodes osh4 type=new
+ oc label nodes osh4 type=testmachine
+
+#check labels
+ oc adm manage-node --selector type=new --list-pods
+oc adm manage-node --selector machine=testmachine --list-pods
+
+#create new project
+oc new-project myproj
+
+#deploy new app
+oc new-app centos/ruby-25-centos7~https://github.com/sclorg/ruby-ex.git
+
+oc describe nodes osh4
+oc describe pod ruby-ex-1-xnv8d
+oc describe pod ruby-ex-1-xnv8d
+
+#evacuating node before deleting node
+oc adm drain osh4 --grace-period=5
+
+#Marking unschedulable
+By default, healthy nodes with a Ready status are marked as schedulable, meaning that new pods are allowed 
+for placement on the node. Manually marking a node as unschedulable blocks any new pods from being scheduled 
+on the node. Existing pods on the node are not affected.
+
+oc adm manage-node <node1> <node2> --schedulable=false
+
+to mark schedulable again:
+$ oc adm manage-node <node1> <node2> --schedulable
+
+to evacuate pods:
+Evacuating pods allows you to migrate all or selected pods from a given node. 
+Only pods backed by a replication controller can be evacuated; the replication controllers 
+create new pods on other nodes and remove the existing pods from the specified node(s). 
+Bare pods, meaning those not backed by a replication controller, are unaffected by default.
+
+To evacuate all or selected pods
+$ oc adm drain <node> [--pod-selector=<pod_selector>]
+
+You can force deletion of bare pods by using the --force option. 
+When set to true, deletion continues even if there are pods not managed by a 
+replication controller, ReplicaSet, job, daemonset, or StatefulSet:
+$ oc adm drain <node> --force=true
+
+You can use --grace-period to set a period of time in seconds for each pod to terminate gracefully.
+If negative, the default value specified in the pod is used:
+$ oc adm drain <node> --grace-period=-1
+
+You can use --ignore-daemonsets and set it to true to ignore daemonset-managed pods:
+$ oc adm drain <node> --ignore-daemonsets=true
+
+You can use --timeout to set the length of time to wait before giving up
+$ oc adm drain <node> --timeout=5s
+
+You can use --delete-local-data and set it to true to continue deletion even if 
+there are pods using emptyDir (local data that is deleted when the node is drained):
+
+$ oc adm drain <node> --delete-local-data=true
+
+To list objects that will be migrated without actually performing the evacuation, use the --dry-run
+$ oc adm drain <node> --dry-run=true
+
+
+
+
+
+
+
+
+
+
+
+
+

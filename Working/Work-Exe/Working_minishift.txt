@@ -1,0 +1,70 @@
+#minishift can be started using virtualbox or Hyper-V
+#follow instructions to setup minishift on windows as mentioned in word document
+
+#to start minishift
+minishift.exe start
+
+#to access console
+minishift.exe console
+
+#to get environment variables
+PS C:\Users\Win10> minishift.exe oc-env
+$Env:PATH = "C:\Users\Win10\.minishift\cache\oc\v3.11.0\windows;$Env:PATH"
+# Run this command to configure your shell:
+# & minishift oc-env | Invoke-Expression
+
+#set environment variables
+> & minishift oc-env | Invoke-Expression
+
+#start console and get ur token
+#login using token
+PS C:\Users\Win10> oc login https://192.168.99.101:8443 --token=O5r2NOUZXet1Km8OdUjxvqHrmdZYzEmMTydkpCCavC8
+Logged into "https://192.168.99.101:8443" as "developer" using the token provided.
+You have one project on this server: "myproject"
+Using project "myproject".
+
+#The token used when you log in will periodically expire, and you will need to log in
+again when it does. When this occurs, you can run oc login with no options:
+> oc login
+Login failed (401 Unauthorized)
+You must obtain an API token by visiting
+https://192.168.99.101:8443/oauth/token/request
+
+>login
+
+>display token
+
+Log in with this token
+oc login --token=KQUg264_zfLtpoQ-6eRpV00cLXmw0PPBCG4-prENqX4 --server=https://192.168.99.101:8443
+Use this token directly against the API (as shown below)
+curl -H "Authorization: Bearer KQUg264_zfLtpoQ-6eRpV00cLXmw0PPBCG4-prENqX4" "https://192.168.99.101:8443/oapi/v1/users/~"
+
+PS C:\Users\Win10> oc login --help
+
+#To get a list of all the commands that oc accepts
+PS C:\Users\Win10> oc help
+
+#For details on common options accepted by all commands, run it with the options
+command:
+PS C:\Users\Win10> oc options
+Many commands will accept --dry-run as an option.
+
+#Using the OpenShift REST API
+When you use the web console or oc command-line tool, it communicates with
+OpenShift using a REST API endpoint. You can also access this REST API directly
+using a simple HTTP client, or by using a custom client for a specific programming
+language generated from the Swagger API specification for OpenShift.
+The same access token used when logging in from the command line can be used
+when making an HTTP call against the REST API. This token should be included as
+part of the value for the Authorization header sent with the HTTP request.
+
+C:\Users\Win10>curl -H "Authorization: Bearer O5r2NOUZXet1Km8OdUjxvqHrmdZYzEmMTydkpCCavC8" "https://192.168.99.101:8443/oapi/v1/users/~" --insecure
+
+for more details on REST API
+https://docs.okd.io/latest/rest_api/index.html
+
+
+
+
+
+

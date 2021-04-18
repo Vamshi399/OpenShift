@@ -1,0 +1,36 @@
+Service Accounts:
+----------------
+Mainly for applications or pods to connect to each other.
+>Create a NewProject
+>click on service accounts
+ shows 3 accounts (builder, default, deployer)
+
+> create a service account (shows YAML file)
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: test
+  namespace: newproject 
+
+--check if service account created..
+--Looking into service account > YAML > will show
+selfLink: /api/v1/namespaces/newproject/serviceaccounts/test
+  uid: 84aa4005-32c2-11eb-8637-0601fd422288
+  resourceVersion: '864008495'
+  creationTimestamp: '2020-11-30T04:14:19Z'
+secrets:
+  - name: test-token-ccllz
+  - name: test-dockercfg-97xd8
+imagePullSecrets:
+  - name: test-dockercfg-97xd8
+
+
+Look into Actions for further actions that can be done..
+------------------
+Roles:
+-----
+shows cluster-wide /System roles
+
+
+

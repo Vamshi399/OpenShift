@@ -1,0 +1,82 @@
+Adding hosts to existing cluster
+
+#Create a inventory file
+Note**
+*.23 is my master node
+*.24 is infra
+*.25 is existing node
+
+inventory file
+
+[root@osh1 openshift-ansible]# vi /etc/ansible/inventory2.ini
+
+[etcd]
+10.156.0.23 openshift_ip=10.156.0.23 ansible_connection=local ansible_become=yes
+
+[nodes]
+10.156.0.23 openshift_ip=10.156.0.23 openshift_schedulable=true openshift_node_group_name="node-config-master"
+10.156.0.24 openshift_ip=10.156.0.24 openshift_node_group_name="node-config-infra" openshift_schedulable=true ansible_become=yes ansible_sudo_pass=abcd1234 ansible_user=root ansible_ssh_pass=abcd1234
+10.156.0.25 openshift_ip=10.156.0.25 openshift_schedulable=true openshift_node_group_name="node-config-compute" ansible_become=yes ansible_sudo_pass=abcd1234 ansible_user=root ansible_ssh_pass=abcd1234
+
+[new_nodes]
+10.156.0.26 openshift_ip=10.156.0.26 openshift_schedulable=true openshift_node_group_name="node-config-compute" ansible_become=yes ansible_sudo_pass=abcd1234 ansible_user=root ansible_ssh_pass=abcd1234
+
+[OSEv3:vars]
+ansible_become=yes
+ansible_sudo=true
+ansible_ssh_user=root
+openshift_release=v3.11
+#openshift_metrics_image_version="v3.11"
+#openshift_logging_image_version="v3.11"
+#openshift_logging_elasticsearch_proxy_image_version="v1.0.0"
+#openshift_logging_es_nodeselector={"node-role.kubernetes.io/infra":"true"}
+#logging_elasticsearch_rollout_override=false
+#osm_use_cockpit=true
+
+#openshift_metrics_install_metrics=True
+#openshift_logging_install_logging=True
+
+ansible-playbook -i /etc/ansible/inventory2.ini playbooks/openshift-master/openshift_node_group.yml
+
+#error fixing
+on master node: if it fails with error related to deployment type check
+
+/root/openshift-ansible/playbooks/init/cluster_facts.yml
+#commented out
+  #- name: get openshift_current_version
+    # get_current_openshift_version is a custom module in lib_utils
+    # this will set_fact openshift_current_version
+    #get_current_openshift_version:
+    #  deployment_type: "{{ openshift_deployment_type }}"
+
+#if fail due to asking openshift release
+error:
+fatal: [10.156.0.23]: FAILED! => {"msg": "An unhandled exception occurred while running the lookup plugin 
+'openshift_master_facts_default_predicates'. Error was a <class 'ansible.errors.AnsibleError'>, 
+original message: Either OpenShift needs to be installed or openshift_release needs to be specified"}
+
+Add this to inventory
+openshift_release=v3.11
+
+#if error on new node(being added) due to deployment type
+vi /root/openshift-ansible/roles/openshift_repos/tasks/main.yaml
+on new node:
+
+    - include_tasks: centos_repos.yml
+      when:
+      - ansible_os_family == "RedHat"
+      - ansible_distribution != "Fedora"
+      - openshift_deployment_type == 'origin'
+
+add in inventory file and comment out release
+openshift_deployment_type=origin
+#openshift_release=v3.11
+
+#if error due to ansible rpm couldnt be installed (on new node)
+yum -y --enablerepo=epel install ansible pyOpenSSL
+curl -o ansible.rpm https://releases.ansible.com/ansible/rpm/release/epel-7-x86_64/ansible-2.6.5-1.el7.ans.noarch.rpm
+yum -y --enablerepo=epel install ansible.rpm
+
+
+
+

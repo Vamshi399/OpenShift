@@ -1,0 +1,223 @@
+Deploy openshift cluster 3.9 (multinode)
+------------------------------
+Note** Scan thru complete file, have a look at instructions /notes and then start the setup..
+
+--setup 4 centos 7 machines within vmbox
+--make sure they can ping each other, ssh each other for root user without password
+--setup DNS or update /etc/hosts as shown
+
+#in /etc/hosts of all 4 machines..
+
+ip1 master.openshift.example.com  master
+ip2 infra.openshift.example.com   infra
+ip3 node1.openshift.example.com   node1
+ip4 node4.openshift.example.com   node2
+
+#To check kernel
+rpm -q kernel --last | head -n 1 | awk '{print $1}' ; echo kernel-$(uname -r)
+(if installed kernel is different than in use kernel, reboot your machines)
+
+#Install the relevant packages
+#do not install/use docker-1.13.1 if this machine was already installed with docker as done in 'single-node-setup'
+#if this is first time setup, then we can goahead with docker-1.13.1 
+
+yum install -y wget git zile nano net-tools docker-1.13.1 bind-utils iptables-services bridge-utils bash-completion
+kexec-tools sos psacct openssl-devel httpd-tools NetworkManager python-cryptography python2-pip python-devel python-passlib 
+java-1.8.0-openjdk-headless "@Development Tools"
+
+#Install repositories:
+rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
+vim /etc/yum.repos.d/Openshift.repo
+
+[openshift]
+name=Centos-OpenShift
+baseurl=http://mirror.centos.org/centos/7/paas/x86_64/openshift-origin39/
+gpgcheck=0
+enabled=1
+
+#start and enable networkmanager and docker services
+systemctl start NetworkManager
+systemctl enable NetworkManager
+systemctl status NetworkManager
+
+systemctl start docker
+systemctl enable docker
+systemctl status docker
+
+#Install Ansible Package and Clone OpenShift-Ansible Git Repo on Master Machine only uing EPEL Repo:
+yum -y --enablerepo=epel install ansible pyOpenSSL (just on master)
+
+#(created by Openshift community,lot of inventory files have been created, playbooks etc as per versions)
+git clone https://github.com/openshift/openshift-ansible.git 
+
+cd openshift-ansible && git fetch && git checkout release-3.9
+
+#make sure all nodes have ssh password less access(if not setup already)
+for host in master.openshift.example.com node1.openshift.example.com node2.openshift.example.com infra.openshift.example.com ;
+do ssh-copy-id -i ~/.ssh/id_rsa.pub $host; done
+
+#under openshift-ansible we see 'inventory' directory that contains 'dynamic' and host specific inventories.
+#We will create our own inventory
+
+#create a file and add the entries as shown
+vi inventory.ini
+--------
+[OSEv3:children]
+masters
+nodes
+etcd
+
+[masters]
+master.openshift.example.com openshift_ip=ipaddress
+
+[etcd]
+master.openshift.example.com openshift_ip=ipaddress
+
+[nodes]
+master.openshift.example.com openshift_ip=ipaddress openshift_schedulable=true
+infra.openshift.example.com openshift_ip=ipaddress openshift_schedulable=true openshift_node_labels="{'region': 'infra','zone':'default'}"
+node1.openshift.example.com openshift_ip=ipaddress openshift_schedulable=true openshift_node_labels="{'region': 'primary','zone':'default'}"
+node2.openshift.example.com openshift_ip=ipaddress openshift_schedulable=true openshift_node_labels="{'region': 'primary','zone':'default'}"
+
+[OSEv3:vars]
+debug_level=4
+ansible_ssh_user=root
+enable_excluders=False
+enable_docker_excluder=False
+openshift_enable_service_catalog=False
+ansible_service_broker_install=False
+
+containerized=True
+os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'
+openshift_disable_check=disk_availability,docker_storage,memory_availability,docker_image_availability
+openshift_node_kubelet_args={'pods-per-core': ['10']}
+
+#we can mention here enterprise if we have required license
+deployment_type=origin
+openshift_deployment_type=origin
+
+openshift_release=v3.9.0
+openshift_pkg_version=-3.9.0
+openshift_image_tag=v3.9.0
+openshift_service_catalog_image_version=v3.9.0
+template_service_broker_image_version=v3.9.0
+osm_use_cockpit=true
+
+#put the router on dedicated infra node
+openshift_hosted_router_selector='region=infra'
+openshift_master_default_subdomain=apps.openshift.example.com
+openshift_public_hostname=master.openshift.example.com
+
+#put the image registry on dedicated infra node
+openshift_hosted_registry_selector='region=infra'
+
+#use htpasswd authentication with demo/demo
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 
+'kind': 'HTPasswdPasswordIdentityProvider','filename': '/etc/origin/master/htpasswd'}]
+openshift_master_htpasswd_users={'demo':'demo'}
+
+:wq(save and exit)
+
+#use the ansible playbook command to check the prerequisites to 
+deploy openshift cluster on master:
+
+#checking
+ansible-playbook -i inventory.ini playbooks/prerequisites.yml
+
+#if ansible version gives a problem we can 
+yum remove ansible
+pip install ansible==2.6.6
+ansible --version
+
+================
+Pull below docker images on master node if you want the installation to be quicker
+
+docker pull registry.fedoraproject.org/latest/etcd:latest && docker pull docker.io/openshift/openvswitch:v3.9.0 && 
+docker pull docker.io/openshift/node:v3.9.0 && docker pull docker.io/openshift/origin:v3.9.0
+
+Pull below docker images on infra,node1,node2 if you want the installation to be quicker
+docker pull docker.io/openshift/openvswitch:v3.9.0 && docker pull docker.io/openshift/node:v3.9.0 && 
+docker pull docker.io/openshift/origin:v3.9.0
+
+#note** if registry.fedoraproject.org/latest/etcd:latest doesn't work use
+bitnami/etcd:latest
+================
+on master:
+docker images
+
+on other nodes:
+docker images
+================
+#once prereq completed without error, use the below ansible playbook to deploy 
+OpenShift cluster on master:
+
+ansible-playbook -i inventory.ini playbooks/deploy_cluster.yml
+#if error about /etcd pull
+edit vi /root/openshift-ansible/roles/etcd/tasks/main.yml and replace {{etcd_image}}
+command: docker pull "bitnami/etcd:latest"
+
+Have to wait 30-40 min before installation completes
+
+---
+while deployment is happening, check
+oc whoami
+oc get nodes
+oc get nodes -o wide
+---
+
+#once installation is completed, create a admin user in OpenShift with Password 'Pas$$w0rd'
+
+ls -l /etc/origin/master/htpasswd
+cat /etc/origin/master/htpasswd
+htpasswd /etc/origin/master/htpasswd admin
+
+New password:
+retype oassword:
+
+cat /etc/origin/master/htpasswd
+
+#assign cluster-admin role to admin user:
+oc adm policy add-cluster-role-to-user cluster-admin admin
+
+#login as admin
+oc login
+admin
+Paa$$w0rd
+===================
+Notes:
+Master node: Hosts API, web console, controllers, schedulers 
+Infra node:  For integrated registry container and routers that forward the traffic into node1 and node2
+Ex: If we deploy an application to node1 and node2, thus this node will divert traffic from users to nodes.
+Node1 & Node2 : Pods/containers will run here
+
+containerized=True ( so that it will pull images to run the pods/containers for web console/registry console etc)
+os_sdn_network_plugin_name= --- defines the sdn image we want to use
+openshift_disable_check=turns off checks during prerequisites (such as disk availa,storage for docker, memory etc)
+openshift_node_kubelet_args=controls pods per core.
+deployment_origin=origin/enterprise(if we have license)
+openshift_hosted_router_selector=mention your dedicated node to host 'router' (we mentioning 'region=infra' specifies
+whatever node is specified in infra region will host router)
+openshift_hosted_registry_selector=mention your dedicated node to host 'image registry'
+
+default_subdomain = is to control the apps which will be launched  as 'applname.projname.<subdomain>'
+htpasswd_auth controls the authentication to login to dashboard without need of explicit username and pswd
+
+Looking in [nodes] section:
+master is also mentioned along with other nodes to make sure sdn component is configured on all nodes.
+openshift_schedulable=true ( if not choosen, pods can't run on master, thus also can't run on other nodes)
+
+====================
+
+
+
+
+
+
+
+
+
+
+
+
+
